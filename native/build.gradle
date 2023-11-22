@@ -29,10 +29,6 @@ dependencies {
     implementation "io.opentelemetry:opentelemetry-api:${openTelemetryVersion}"
     implementation "io.opentelemetry:opentelemetry-api-metrics:${openTelemetryAlphaVersion}"
     implementation "io.opentelemetry:opentelemetry-context:${openTelemetryVersion}"
-
-//    implementation "io.opentelemetry:opentelemetry-exporter-otlp-logs:1.26.0-alpha"
-//    implementation "io.opentelemetry:opentelemetry-sdk-logs:1.32.0"
-
     implementation "io.opentelemetry:opentelemetry-sdk-trace:${openTelemetryVersion}"
     implementation "io.opentelemetry:opentelemetry-sdk-common:${openTelemetryVersion}"
     implementation "io.opentelemetry:opentelemetry-semconv:${openTelemetryAlphaVersion}"
