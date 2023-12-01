@@ -27,7 +27,7 @@ configurable int tracingReporterBufferSize = 10000;
 function startTracerProvider(string apiKey) {
     string selectedSamplerType;
 
-    if (tracingSamplerType != "const" && tracingSamplerType != "ratelimiting" && tracingSamplerType != "probabilistic") {
+    if tracingSamplerType != "const" && tracingSamplerType != "ratelimiting" && tracingSamplerType != "probabilistic" {
         selectedSamplerType = DEFAULT_SAMPLER_TYPE;
         io:println("error: invalid New Relic configuration sampler type: " + tracingSamplerType
                                             + ". using default " + DEFAULT_SAMPLER_TYPE + " sampling");
