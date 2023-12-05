@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ballerina/io;
+import ballerina/log;
 import ballerina/jballerina.java;
 
 const DEFAULT_SAMPLER_TYPE = "const";
@@ -29,7 +29,7 @@ function startTracerProvider(string apiKey) {
 
     if tracingSamplerType != "const" && tracingSamplerType != "ratelimiting" && tracingSamplerType != "probabilistic" {
         selectedSamplerType = DEFAULT_SAMPLER_TYPE;
-        io:println("error: invalid New Relic configuration sampler type: " + tracingSamplerType
+        log:printError("error: invalid New Relic configuration sampler type: " + tracingSamplerType
                                             + ". using default " + DEFAULT_SAMPLER_TYPE + " sampling");
     } else {
         selectedSamplerType = tracingSamplerType;

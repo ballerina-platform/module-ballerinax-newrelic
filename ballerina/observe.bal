@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ballerina/io;
 import ballerina/observe;
 
 const REPORTER_NAME = "newrelic";
@@ -22,9 +21,9 @@ const PROVIDER_NAME = "newrelic";
 
 configurable string apiKey = "";
 
-function init() {
+function init() returns error? {
     if (apiKey == "") {
-        io:println("error: cannot find API key for trace API. Please configure API key in Config.toml file.");
+        return error("error: cannot find API key for trace API. Please configure API key in Config.toml file.");
     } else {
         if (observe:isTracingEnabled() && observe:getTracingProvider() == PROVIDER_NAME) {
             startTracerProvider(apiKey);
