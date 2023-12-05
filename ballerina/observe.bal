@@ -22,13 +22,13 @@ const PROVIDER_NAME = "newrelic";
 configurable string apiKey = "";
 
 function init() returns error? {
-    if (apiKey == "") {
+    if apiKey == "" {
         return error("error: cannot find API key for trace API. Please configure API key in Config.toml file.");
     } else {
-        if (observe:isTracingEnabled() && observe:getTracingProvider() == PROVIDER_NAME) {
+        if observe:isTracingEnabled() && observe:getTracingProvider() == PROVIDER_NAME {
             startTracerProvider(apiKey);
         }
-        if (observe:isMetricsEnabled() && observe:getMetricsReporter() == REPORTER_NAME) {
+        if observe:isMetricsEnabled() && observe:getMetricsReporter() == REPORTER_NAME {
             startMetricsReporter(apiKey);
         }
     }
