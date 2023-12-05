@@ -15,15 +15,24 @@
 // under the License.
 
 import ballerina/jballerina.java;
+import ballerina/log;
 
 configurable int metricReporterFlushInterval = 15000;
 configurable int metricReporterClientTimeout = 10000;
 
 isolated function startMetricsReporter(string apiKey) {
-    externSendMetrics(apiKey, metricReporterFlushInterval, metricReporterClientTimeout);
+    string[] output = externSendMetrics(apiKey, metricReporterFlushInterval, metricReporterClientTimeout);
+    
+    foreach string outputLine in output {
+        if (outputLine.startsWith("error:")) {
+            log:printError(outputLine);
+        } else {
+            log:printInfo(outputLine);
+        }
+    }
 }
 
-isolated function externSendMetrics(string apiKey,int metricReporterFlushInterval, int metricReporterClientTimeout) = @java:Method {
+isolated function externSendMetrics(string apiKey,int metricReporterFlushInterval, int metricReporterClientTimeout) returns string[] = @java:Method {
     'class: "io.ballerina.observe.metrics.newrelic.NewRelicMetricsReporter",
     name: "sendMetrics"
 } external;

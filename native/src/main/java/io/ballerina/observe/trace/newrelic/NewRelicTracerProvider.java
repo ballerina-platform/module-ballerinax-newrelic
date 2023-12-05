@@ -18,6 +18,11 @@
 package io.ballerina.observe.trace.newrelic;
 
 import io.ballerina.observe.trace.newrelic.sampler.RateLimitingSampler;
+import io.ballerina.runtime.api.PredefinedTypes;
+import io.ballerina.runtime.api.creators.TypeCreator;
+import io.ballerina.runtime.api.creators.ValueCreator;
+import io.ballerina.runtime.api.utils.StringUtils;
+import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.observability.tracer.spi.TracerProvider;
@@ -45,8 +50,6 @@ public class NewRelicTracerProvider implements TracerProvider {
     private static final String TRACE_REPORTER_ENDPOINT = "https://otlp.nr-data.net:4317";
     private static final String TRACE_API_KEY_HEADER = "Api-Key";
 
-    private static final PrintStream console = System.out;
-
     static SdkTracerProviderBuilder tracerProviderBuilder;
 
     @Override
@@ -59,8 +62,10 @@ public class NewRelicTracerProvider implements TracerProvider {
         // Do Nothing
     }
 
-    public static void startPublishingTraces(BString apiKey, BString samplerType, BDecimal samplerParam,
+    public static BArray startPublishingTraces(BString apiKey, BString samplerType, BDecimal samplerParam,
                                                 int reporterFlushInterval, int reporterBufferSize) {
+        BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
+
         OtlpGrpcSpanExporter exporter = OtlpGrpcSpanExporter.builder()
                 .setEndpoint(TRACE_REPORTER_ENDPOINT)
                 .addHeader(TRACE_API_KEY_HEADER, apiKey.getValue())
@@ -74,8 +79,10 @@ public class NewRelicTracerProvider implements TracerProvider {
                         .build());
 
         tracerProviderBuilder.setSampler(selectSampler(samplerType, samplerParam));
+        output.append(StringUtils.fromString("ballerina: started publishing traces to New Relic on " +
+                TRACE_REPORTER_ENDPOINT));
 
-        console.println("ballerina: started publishing traces to New Relic on " + TRACE_REPORTER_ENDPOINT);
+        return output;
     }
 
     private static Sampler selectSampler(BString samplerType, BDecimal samplerParam) {

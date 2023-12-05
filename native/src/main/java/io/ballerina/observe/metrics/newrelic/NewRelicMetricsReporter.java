@@ -23,7 +23,14 @@ import com.newrelic.telemetry.TelemetryClient;
 import com.newrelic.telemetry.metrics.Count;
 import com.newrelic.telemetry.metrics.MetricBatch;
 import com.newrelic.telemetry.metrics.MetricBuffer;
+import io.ballerina.runtime.api.PredefinedTypes;
+import io.ballerina.runtime.api.creators.TypeCreator;
+import io.ballerina.runtime.api.creators.ValueCreator;
+import io.ballerina.runtime.api.types.ArrayType;
+import io.ballerina.runtime.api.utils.StringUtils;
+import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BString;
+import io.ballerina.runtime.internal.types.BStringType;
 import io.ballerina.runtime.observability.metrics.Counter;
 import io.ballerina.runtime.observability.metrics.DefaultMetricRegistry;
 import io.ballerina.runtime.observability.metrics.Gauge;
@@ -51,12 +58,13 @@ import static io.ballerina.observe.metrics.newrelic.ObserveNativeImplConstants.P
  * This is the New Relic metric reporter class.
  */
 public class NewRelicMetricsReporter {
-    private static final PrintStream console = System.out;
     private static final String METRIC_REPORTER_ENDPOINT = "https://metric-api.newrelic.com/metric/v1";
     private static final int SCHEDULE_EXECUTOR_INITIAL_DELAY = 0;
 
-    public static void sendMetrics(BString apiKey, int metricReporterFlushInterval,
-                                         int metricReporterClientTimeout) {
+    public static BArray sendMetrics(BString apiKey, int metricReporterFlushInterval,
+                                       int metricReporterClientTimeout) {
+        BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
+
         // create a TelemetryClient with an HTTP connect timeout of 10 seconds.
         TelemetryClient telemetryClient =
                 TelemetryClient.create(
@@ -68,7 +76,7 @@ public class NewRelicMetricsReporter {
                     .put("host", InetAddress.getLocalHost().getHostName())
                     .put("language", "ballerina");
         } catch (UnknownHostException e) {
-            console.println("Error while getting the host name");
+            output.append(StringUtils.fromString("error: while getting the host name of the instance"));
         }
 
         // Create a ScheduledExecutorService with a single thread
@@ -82,7 +90,10 @@ public class NewRelicMetricsReporter {
             telemetryClient.sendBatch(batch);
         }, SCHEDULE_EXECUTOR_INITIAL_DELAY, metricReporterFlushInterval, TimeUnit.MILLISECONDS);
 
-        console.println("ballerina: started publishing metrics to New Relic on " + METRIC_REPORTER_ENDPOINT);
+        output.append(StringUtils.fromString("ballerina: started publishing metrics to New Relic on " +
+                METRIC_REPORTER_ENDPOINT));
+
+        return output;
     }
 
     private static MetricBuffer generateMetricBuffer(Attributes commonAttributes) {

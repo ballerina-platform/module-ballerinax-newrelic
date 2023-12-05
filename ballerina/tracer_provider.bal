@@ -35,12 +35,20 @@ function startTracerProvider(string apiKey) {
         selectedSamplerType = tracingSamplerType;
     }
 
-    externStartPublishingTraces(apiKey, selectedSamplerType, tracingSamplerParam,
+    string[] output = externStartPublishingTraces(apiKey, selectedSamplerType, tracingSamplerParam,
         tracingReporterFlushInterval, tracingReporterBufferSize);
+    
+    foreach string outputLine in output {
+        if (outputLine.startsWith("error:")) {
+            log:printError(outputLine);
+        } else {
+            log:printInfo(outputLine);
+        }
+    }
 }
 
 function externStartPublishingTraces(string apiKey, string samplerType,
-        decimal samplerParam, int reporterFlushInterval, int reporterBufferSize) = @java:Method {
+        decimal samplerParam, int reporterFlushInterval, int reporterBufferSize) returns string[] = @java:Method {
     'class: "io.ballerina.observe.trace.newrelic.NewRelicTracerProvider",
     name: "startPublishingTraces"
 } external;
