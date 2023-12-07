@@ -47,6 +47,8 @@ import static io.opentelemetry.semconv.resource.attributes.ResourceAttributes.SE
  */
 public class NewRelicTracerProvider implements TracerProvider {
     private static final String TRACER_NAME = "newrelic";
+    private static final String CONST_SAMPLER_TYPE = "const";
+    private static final String PROBABILISTIC_SAMPLER_TYPE = "probabilistic";
     private static final String TRACE_REPORTER_ENDPOINT = "https://otlp.nr-data.net:4317";
     private static final String TRACE_API_KEY_HEADER = "Api-Key";
 
@@ -88,13 +90,13 @@ public class NewRelicTracerProvider implements TracerProvider {
     private static Sampler selectSampler(BString samplerType, BDecimal samplerParam) {
         switch (samplerType.getValue()) {
             default:
-            case "const":
+            case CONST_SAMPLER_TYPE:
                 if (samplerParam.value().intValue() == 0) {
                     return Sampler.alwaysOff();
                 } else {
                     return Sampler.alwaysOn();
                 }
-            case "probabilistic":
+            case PROBABILISTIC_SAMPLER_TYPE:
                 return Sampler.traceIdRatioBased(samplerParam.value().doubleValue());
             case RateLimitingSampler.TYPE:
                 return new RateLimitingSampler(samplerParam.value().intValue());
@@ -106,7 +108,7 @@ public class NewRelicTracerProvider implements TracerProvider {
 
         return tracerProviderBuilder.setResource(
                         Resource.create(Attributes.of(SERVICE_NAME, serviceName)))
-                .build().get("newrelic");
+                .build().get(TRACER_NAME);
     }
 
     @Override
