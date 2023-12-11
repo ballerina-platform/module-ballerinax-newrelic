@@ -15,21 +15,31 @@
 // under the License.
 
 import ballerina/observe;
+import ballerina/os;
+import ballerina/log;
 
 const REPORTER_NAME = "newrelic";
 const PROVIDER_NAME = "newrelic";
+const NEW_RELIC_API_KEY_ENV = "BALLERINA_NEW_RELIC_API_KEY";
 
 configurable string apiKey = "";
 
 function init() returns error? {
-    if apiKey == "" {
+    string configurableAPIKey = apiKey;
+
+    if (os:getEnv(NEW_RELIC_API_KEY_ENV) != "") {
+        configurableAPIKey = os:getEnv(NEW_RELIC_API_KEY_ENV);
+        log:printInfo("Using New Relic API key from environment variable " + NEW_RELIC_API_KEY_ENV);
+    }
+
+    if configurableAPIKey == "" {
         return error("error: cannot find API key for trace API. Please configure API key in Config.toml file.");
     } else {
         if observe:isTracingEnabled() && observe:getTracingProvider() == PROVIDER_NAME {
-            startTracerProvider(apiKey);
+            startTracerProvider(configurableAPIKey);
         }
         if observe:isMetricsEnabled() && observe:getMetricsReporter() == REPORTER_NAME {
-            startMetricsReporter(apiKey);
+            startMetricsReporter(configurableAPIKey);
         }
     }
 }
