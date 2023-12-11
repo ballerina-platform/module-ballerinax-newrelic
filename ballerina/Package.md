@@ -40,5 +40,5 @@ tracingReporterBufferSize=10000     # Optional Configuration. Default value is 1
 metricReporterFlushInterval=15000   # Optional Configuration. Default value is 15000 milliseconds
 metricReporterClientTimeout=10000   # Optional Configuration. Default value is 10000 milliseconds
 ```
-User can configure environment variable `BALLERINA_NEWRELIC_API_KEY` instead of `apiKey` in `Config.toml`. 
+User can configure the environment variable `BALLERINA_NEWRELIC_API_KEY` instead of `apiKey` in `Config.toml`.
 If both are configured, `apiKey` in `Config.toml` will be overwritten by the environment variable value.
