@@ -1,0 +1,5 @@
+fixes:
+  - "ballerinax/newrelic/*/::ballerina/"
+  
+ignore:
+  - "**/test"

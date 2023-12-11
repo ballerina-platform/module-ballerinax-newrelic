@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+plugins {
+    id 'java-library'
+}
+
+description = 'Ballerina - New Relic Extension - Native Module'
+
+dependencies {
+    implementation "org.ballerinalang:ballerina-runtime:${ballerinaLangVersion}"
+    implementation "com.newrelic.telemetry:telemetry-all:${newrelicTelemetryVersion}"
+    implementation "com.newrelic.telemetry:telemetry-http-okhttp:${newrelicTelemetryVersion}"
+    implementation "io.opentelemetry:opentelemetry-api:${openTelemetryVersion}"
+    implementation "io.opentelemetry:opentelemetry-api-metrics:${openTelemetryAlphaVersion}"
+    implementation "io.opentelemetry:opentelemetry-context:${openTelemetryVersion}"
+    implementation "io.opentelemetry:opentelemetry-sdk-trace:${openTelemetryVersion}"
+    implementation "io.opentelemetry:opentelemetry-sdk-common:${openTelemetryVersion}"
+    implementation "io.opentelemetry:opentelemetry-semconv:${openTelemetryAlphaVersion}"
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp-trace:${openTelemetryVersion}"
+    implementation "io.opentelemetry:opentelemetry-extension-trace-propagators:${openTelemetryVersion}"
+    implementation("com.google.guava:guava:${guavaVersion}") {
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    }
+    implementation("com.google.guava:failureaccess:${failureAccessVersion}")
+}
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name, 'Implementation-Version': project.version)
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId project.group
+            artifactId "newrelic-extension-native"
+            version = project.version
+            artifact jar
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/${System.getenv("packagePublishRepo")}")
+            credentials {
+                username = System.getenv("packageUser")
+                password = System.getenv("packagePAT")
+            }
+        }
+    }
+}
+
+task copyJavaClassFiles(type: Copy) {
+    dependsOn(compileJava)
+    from("${project.buildDir}/classes") {
+        exclude '**/module-info.class'
+        include '**/*.class'
+    }
+    into "${project.rootDir.absolutePath}/build/classes"
+}
