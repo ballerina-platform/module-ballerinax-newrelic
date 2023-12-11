@@ -3,10 +3,10 @@ name: Publish Release
 on:
   workflow_dispatch:
     inputs:
-      distribution_version:
-        description: 'Ballerina distribution version (e.g.; 2201.8.0)'
+      ballerina_version:
+        description: 'Ballerina distribution version (e.g.; 2201.8.4)'
         required: true
-        default: '2201.8.0'
+        default: '2201.8.4'
 
 jobs:
   publish-release:
