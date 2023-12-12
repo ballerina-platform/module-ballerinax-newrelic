@@ -59,13 +59,26 @@ modules = [
 ]
 
 [[package]]
+org = "ballerina"
+name = "os"
+version = "1.8.0"
+dependencies = [
+	{org = "ballerina", name = "io"},
+	{org = "ballerina", name = "jballerina.java"}
+]
+modules = [
+	{org = "ballerina", packageName = "os", moduleName = "os"}
+]
+
+[[package]]
 org = "ballerinax"
 name = "newrelic"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "log"},
-	{org = "ballerina", name = "observe"}
+	{org = "ballerina", name = "observe"},
+	{org = "ballerina", name = "os"}
 ]
 modules = [
 	{org = "ballerinax", packageName = "newrelic", moduleName = "newrelic"}
