@@ -6,7 +6,7 @@ on:
       ballerina_version:
         description: 'Ballerina distribution version (e.g.; 2201.8.4)'
         required: true
-        default: '2201.8.4'
+        default: '2201.10.3'
 
 jobs:
   publish-release:
@@ -49,7 +49,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'rootfs'
-          scan-ref: '/github/workspace/ballerina/lib'
+          scan-ref: "${{ github.workspace }}/ballerina/lib"
           format: 'table'
           timeout: '10m0s'
           exit-code: '1'
