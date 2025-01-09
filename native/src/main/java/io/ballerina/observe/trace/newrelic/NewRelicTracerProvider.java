@@ -39,7 +39,7 @@ import io.opentelemetry.sdk.trace.samplers.Sampler;
 
 import java.util.concurrent.TimeUnit;
 
-import static io.opentelemetry.semconv.resource.attributes.ResourceAttributes.SERVICE_NAME;
+import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_NAME;
 
 /**
  * This is the New Relic tracing extension class for {@link TracerProvider}.
@@ -107,7 +107,7 @@ public class NewRelicTracerProvider implements TracerProvider {
 
         return tracerProviderBuilder.setResource(
                         Resource.create(Attributes.of(SERVICE_NAME, serviceName)))
-                .build().get(TRACER_NAME);
+                .build().get("jaeger");
     }
 
     @Override
