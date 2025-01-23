@@ -28,9 +28,9 @@ import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.observability.tracer.spi.TracerProvider;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.extension.trace.propagation.B3Propagator;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
@@ -107,11 +107,11 @@ public class NewRelicTracerProvider implements TracerProvider {
 
         return tracerProviderBuilder.setResource(
                         Resource.create(Attributes.of(SERVICE_NAME, serviceName)))
-                .build().get("jaeger");
+                .build().get("newrelic");
     }
 
     @Override
     public ContextPropagators getPropagators() {
-        return ContextPropagators.create(B3Propagator.injectingSingleHeader());
+        return ContextPropagators.create(W3CTraceContextPropagator.getInstance());
     }
 }
