@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.10.0"
+distribution-version = "2201.10.3"
 
 [[package]]
 org = "ballerina"
@@ -73,7 +73,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "newrelic"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "log"},
