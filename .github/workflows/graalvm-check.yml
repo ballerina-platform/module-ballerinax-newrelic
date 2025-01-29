@@ -23,7 +23,7 @@ jobs:
         uses: graalvm/setup-graalvm@v1
         with:
           version: 'latest'
-          java-version: '17.0.7'
+          java-version: '21.0.3'
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check GraalVM installation
@@ -33,7 +33,7 @@ jobs:
           native-image --version
       - name: Set up Ballerina
         if: github.event_name == 'workflow_dispatch'
-        uses: ballerina-platform/setup-ballerina@v1.1.0
+        uses: ballerina-platform/setup-ballerina@v1.1.3
         with:
           version: ${{ github.event.inputs.ballerina_version }}
       - name: Set up Ballerina
