@@ -17,11 +17,12 @@
  */
 package io.ballerina.observe.metrics.newrelic;
 
-import com.newrelic.telemetry.Attributes;
-import com.newrelic.telemetry.OkHttpPoster;
-import com.newrelic.telemetry.TelemetryClient;
+import com.newrelic.telemetry.*;
+import com.newrelic.telemetry.exceptions.ResponseException;
+import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.metrics.Count;
 import com.newrelic.telemetry.metrics.MetricBatch;
+import com.newrelic.telemetry.metrics.MetricBatchSender;
 import com.newrelic.telemetry.metrics.MetricBuffer;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
@@ -40,13 +41,14 @@ import io.ballerina.runtime.observability.metrics.PolledGauge;
 import io.ballerina.runtime.observability.metrics.Snapshot;
 import io.ballerina.runtime.observability.metrics.Tag;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static io.ballerina.observe.metrics.newrelic.ObserveNativeImplConstants.EXPIRY_TAG;
 import static io.ballerina.observe.metrics.newrelic.ObserveNativeImplConstants.PERCENTILE_TAG;
@@ -57,16 +59,48 @@ import static io.ballerina.observe.metrics.newrelic.ObserveNativeImplConstants.P
 public class NewRelicMetricsReporter {
     private static final String METRIC_REPORTER_ENDPOINT = "https://metric-api.newrelic.com/metric/v1";
     private static final int SCHEDULE_EXECUTOR_INITIAL_DELAY = 0;
+    private static final Logger logger = Logger.getLogger(NewRelicMetricsReporter.class.getName());
+//    private static final Logger logger = LoggerFactory.getLogger(NewRelicMetricsReporter.class);
+
+    private static ScheduledExecutorService executor;
 
     public static BArray sendMetrics(BString apiKey, int metricReporterFlushInterval,
-                                       int metricReporterClientTimeout) {
+                                     int metricReporterClientTimeout, boolean isTraceLoggingEnabled,
+                                     boolean isPayloadLoggingEnabled) {
         BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
 
-        // create a TelemetryClient with an HTTP connect timeout of 10 seconds.
-        TelemetryClient telemetryClient =
-                TelemetryClient.create(
-                        () -> new OkHttpPoster(Duration.of(metricReporterClientTimeout, ChronoUnit.MILLIS)),
-                        apiKey.getValue());
+        if (isTraceLoggingEnabled) {
+            logger.setLevel(Level.INFO);
+            logger.info("Trace logging is enabled for New Relic metrics reporter");
+        }
+
+        // Initialize the executor if not already done
+        if (executor == null || executor.isShutdown()) {
+            executor = Executors.newScheduledThreadPool(1);
+        }
+
+        URL endpointUrl;
+        try {
+            endpointUrl = URI.create(METRIC_REPORTER_ENDPOINT).toURL();
+        } catch (MalformedURLException e) {
+            output.append(StringUtils.fromString("error: invalid endpoint URL for New Relic metrics reporter"));
+            return output;
+        }
+
+        HttpPoster httpPoster = new OkHttpPoster(Duration.ofSeconds(metricReporterClientTimeout));
+
+        MetricBatchSenderFactory factory = MetricBatchSenderFactory.fromHttpImplementation(OkHttpPoster::new);
+
+        SenderConfiguration config = factory
+                .configureWith(apiKey.getValue())
+                .httpPoster(httpPoster)
+                .endpoint(endpointUrl)
+                .auditLoggingEnabled(true)
+                .build();
+
+        MetricBatchSender sender = MetricBatchSender.create(config);
+
+        // Create common attributes for all metrics
         Attributes commonAttributes = null;
         try {
             commonAttributes = new Attributes()
@@ -76,15 +110,22 @@ public class NewRelicMetricsReporter {
             output.append(StringUtils.fromString("error: while getting the host name of the instance"));
         }
 
-        // Create a ScheduledExecutorService with a single thread
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-
         // Schedule a task to run every 1 second with an initial delay of 0 seconds
         Attributes finalCommonAttributes = commonAttributes;
-        executorService.scheduleAtFixedRate(() -> {
+        executor.scheduleAtFixedRate(() -> {
             MetricBuffer metricBuffer = generateMetricBuffer(finalCommonAttributes);
+            int metricCount = metricBuffer.size();
+            if (isPayloadLoggingEnabled) {
+                logger.info("Metric buffer: " + metricBuffer);
+            }
             MetricBatch batch = metricBuffer.createBatch();
-            telemetryClient.sendBatch(batch);
+            try {
+                Response response = sender.sendBatch(batch);
+                logger.info("New Relic metric reporter status: " + response.getStatusMessage() + ", response: "
+                        + response.getBody() + ", payload metrics count: " + metricCount);
+            } catch (ResponseException e) {
+                logger.severe("Error sending metrics to New Relic: " + e.getMessage());
+            }
         }, SCHEDULE_EXECUTOR_INITIAL_DELAY, metricReporterFlushInterval, TimeUnit.MILLISECONDS);
 
         output.append(StringUtils.fromString("ballerina: started publishing metrics to New Relic on " +
