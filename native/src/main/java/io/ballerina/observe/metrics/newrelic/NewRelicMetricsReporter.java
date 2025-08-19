@@ -17,7 +17,11 @@
  */
 package io.ballerina.observe.metrics.newrelic;
 
-import com.newrelic.telemetry.*;
+import com.newrelic.telemetry.Attributes;
+import com.newrelic.telemetry.MetricBatchSenderFactory;
+import com.newrelic.telemetry.OkHttpPoster;
+import com.newrelic.telemetry.Response;
+import com.newrelic.telemetry.SenderConfiguration;
 import com.newrelic.telemetry.exceptions.ResponseException;
 import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.metrics.Count;
@@ -41,9 +45,12 @@ import io.ballerina.runtime.observability.metrics.PolledGauge;
 import io.ballerina.runtime.observability.metrics.Snapshot;
 import io.ballerina.runtime.observability.metrics.Tag;
 
-import java.net.*;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -60,9 +67,19 @@ public class NewRelicMetricsReporter {
     private static final String METRIC_REPORTER_ENDPOINT = "https://metric-api.newrelic.com/metric/v1";
     private static final int SCHEDULE_EXECUTOR_INITIAL_DELAY = 0;
     private static final Logger logger = Logger.getLogger(NewRelicMetricsReporter.class.getName());
-//    private static final Logger logger = LoggerFactory.getLogger(NewRelicMetricsReporter.class);
 
-    private static ScheduledExecutorService executor;
+    private static volatile ScheduledExecutorService executor;
+
+    private static ScheduledExecutorService getOrCreateExecutor() {
+        if (executor == null || executor.isShutdown()) {
+            synchronized (NewRelicMetricsReporter.class) {
+                if (executor == null || executor.isShutdown()) {
+                    executor = Executors.newScheduledThreadPool(1);
+                }
+            }
+        }
+        return executor;
+    }
 
     public static BArray sendMetrics(BString apiKey, int metricReporterFlushInterval,
                                      int metricReporterClientTimeout, boolean isTraceLoggingEnabled,
@@ -74,10 +91,7 @@ public class NewRelicMetricsReporter {
             logger.info("Trace logging is enabled for New Relic metrics reporter");
         }
 
-        // Initialize the executor if not already done
-        if (executor == null || executor.isShutdown()) {
-            executor = Executors.newScheduledThreadPool(1);
-        }
+        executor = getOrCreateExecutor();
 
         URL endpointUrl;
         try {
