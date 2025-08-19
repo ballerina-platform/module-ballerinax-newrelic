@@ -91,6 +91,12 @@ public class NewRelicMetricsReporter {
             logger.info("Trace logging is enabled for New Relic metrics reporter");
         }
 
+        logger.info("Info log");
+        logger.config("Config log");
+        logger.fine("Fine log");
+        logger.severe("Severe log");
+        logger.warning("Warning log");
+
         executor = getOrCreateExecutor();
 
         URL endpointUrl;
@@ -109,7 +115,7 @@ public class NewRelicMetricsReporter {
                 .configureWith(apiKey.getValue())
                 .httpPoster(httpPoster)
                 .endpoint(endpointUrl)
-                .auditLoggingEnabled(true)
+                .auditLoggingEnabled(isTraceLoggingEnabled)
                 .build();
 
         MetricBatchSender sender = MetricBatchSender.create(config);
