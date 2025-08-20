@@ -23,6 +23,8 @@ const PROVIDER_NAME = "newrelic";
 const NEW_RELIC_API_KEY_ENV = "BALLERINA_NEW_RELIC_API_KEY";
 
 configurable string apiKey = "";
+configurable boolean isTraceLoggingEnabled = false;
+configurable boolean isPayloadLoggingEnabled = false;
 
 function init() returns error? {
     string configurableAPIKey = apiKey;
