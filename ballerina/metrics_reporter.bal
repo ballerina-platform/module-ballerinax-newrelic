@@ -21,8 +21,9 @@ configurable int metricReporterFlushInterval = 15000;
 configurable int metricReporterClientTimeout = 10000;
 
 isolated function startMetricsReporter(string apiKey) {
-    string[] output = externSendMetrics(apiKey, metricReporterFlushInterval, metricReporterClientTimeout);
-    
+    string[] output = externSendMetrics(apiKey, metricReporterFlushInterval, metricReporterClientTimeout,
+        isTraceLoggingEnabled, isPayloadLoggingEnabled);
+
     foreach string outputLine in output {
         if (outputLine.startsWith("error:")) {
             log:printError(outputLine);
@@ -32,7 +33,8 @@ isolated function startMetricsReporter(string apiKey) {
     }
 }
 
-isolated function externSendMetrics(string apiKey,int metricReporterFlushInterval, int metricReporterClientTimeout) returns string[] = @java:Method {
+isolated function externSendMetrics(string apiKey, int metricReporterFlushInterval, int metricReporterClientTimeout,
+    boolean isTraceLoggingEnabled, boolean isPayloadLoggingEnabled) returns string[] = @java:Method {
     'class: "io.ballerina.observe.metrics.newrelic.NewRelicMetricsReporter",
     name: "sendMetrics"
 } external;
