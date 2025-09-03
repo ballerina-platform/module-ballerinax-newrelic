@@ -46,5 +46,5 @@ isPayloadLoggingEnabled=false       # Optional Configuration. Default value is f
 key1 = "<VALUE_1>"
 key2 = "<VALUE_2>"
 ```
-User can configure the environment variable `BALLERINA_NEWRELIC_API_KEY` instead of `apiKey` in `Config.toml`.
+User can configure the environment variable `BALLERINA_NEW_RELIC_API_KEY` instead of `apiKey` in `Config.toml`.
 If both are configured, `apiKey` in `Config.toml` will be overwritten by the environment variable value.
