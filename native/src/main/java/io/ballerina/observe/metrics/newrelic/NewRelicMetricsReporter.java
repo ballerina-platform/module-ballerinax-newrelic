@@ -33,6 +33,7 @@ import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.PredefinedTypes;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BArray;
+import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.observability.metrics.Counter;
 import io.ballerina.runtime.observability.metrics.DefaultMetricRegistry;
@@ -83,19 +84,13 @@ public class NewRelicMetricsReporter {
 
     public static BArray sendMetrics(BString apiKey, int metricReporterFlushInterval,
                                      int metricReporterClientTimeout, boolean isTraceLoggingEnabled,
-                                     boolean isPayloadLoggingEnabled) {
+                                     boolean isPayloadLoggingEnabled, BMap<BString, BString> additionalAttributes) {
         BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
 
         if (isTraceLoggingEnabled) {
             logger.setLevel(Level.INFO);
             logger.info("Trace logging is enabled for New Relic metrics reporter");
         }
-
-        logger.info("Info log");
-        logger.config("Config log");
-        logger.fine("Fine log");
-        logger.severe("Severe log");
-        logger.warning("Warning log");
 
         executor = getOrCreateExecutor();
 
@@ -126,6 +121,10 @@ public class NewRelicMetricsReporter {
             commonAttributes = new Attributes()
                     .put("host", InetAddress.getLocalHost().getHostName())
                     .put("language", "ballerina");
+
+            for (BString key : additionalAttributes.getKeys()) {
+                commonAttributes.put(key.getValue(), additionalAttributes.get(key).getValue());
+            }
         } catch (UnknownHostException e) {
             output.append(StringUtils.fromString("error: while getting the host name of the instance"));
         }
