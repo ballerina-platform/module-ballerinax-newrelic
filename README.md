@@ -72,6 +72,8 @@ tracingReporterFlushInterval=15000  # Optional Configuration. Default value is 1
 tracingReporterBufferSize=10000     # Optional Configuration. Default value is 10000
 metricReporterFlushInterval=15000   # Optional Configuration. Default value is 15000 milliseconds
 metricReporterClientTimeout=10000   # Optional Configuration. Default value is 10000 milliseconds
+isTraceLoggingEnabled=false         # Optional Configuration. Default value is false
+isPayloadLoggingEnabled=false       # Optional Configuration. Default value is false
 ```
 User can configure the environment variable `BALLERINA_NEW_RELIC_API_KEY` instead of `apiKey` in `Config.toml`.
 If both are configured, `apiKey` in `Config.toml` will be overwritten by the environment variable value.
