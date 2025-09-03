@@ -83,14 +83,15 @@ task copyExternalJarsToLib(type: Copy) {
 
 def packageOrg = "ballerinax"
 def packageName = "newrelic"
-def ballerinaConfigFile = new File("${project.projectDir}/Ballerina.toml")
+def ballerinaTomlFile = new File("${project.projectDir}/Ballerina.toml")
+def ballerinaTomlFilePlaceHolder = new File("${project.rootDir}/build-config/resources/Ballerina.toml")
 def artifactBallerinaDocs = file("${project.projectDir}/build/docs_parent/")
 def artifactCacheParent = file("${project.buildDir}/cache_parent/")
 def artifactLibParent = file("${project.buildDir}/lib_parent/")
 def snapshotVersion = "-SNAPSHOT"
 def tomlVersion = stripBallerinaExtensionVersion("${project.version}")
 def ballerinaCentralAccessToken = System.getenv('BALLERINA_CENTRAL_ACCESS_TOKEN')
-def originalConfig = ballerinaConfigFile.text
+def originalConfig = ballerinaTomlFilePlaceHolder.text
 def artifactJar = file("$project.projectDir/target/cache/${packageOrg}/${packageName}/${tomlVersion}/java17/")
 def platform = "java17"
 def skipTests = false
@@ -123,7 +124,7 @@ task updateTomlVersions {
         def guavaVersion = project.guavaVersion
         def failureAccessVersion = project.failureAccessVersion
 
-        def newConfig = ballerinaConfigFile.text.replace("@project.version@", project.version)
+        def newConfig = ballerinaTomlFilePlaceHolder.text.replace("@project.version@", project.version)
         newConfig = newConfig.replace("@toml.version@", tomlVersion)
         newConfig = newConfig.replace("@newrelic.telemetry.version@", newrelicTelemetryVersion)
         newConfig = newConfig.replace("@okio.version@", okioVersion)
@@ -136,7 +137,7 @@ task updateTomlVersions {
         newConfig = newConfig.replace("@perfmark.version@", perfmarkVersion)
         newConfig = newConfig.replace("@guava.version@", guavaVersion)
         newConfig = newConfig.replace("@failureAccess.version@", failureAccessVersion)
-        ballerinaConfigFile.text = newConfig
+        ballerinaTomlFile.text = newConfig
     }
 }
 
