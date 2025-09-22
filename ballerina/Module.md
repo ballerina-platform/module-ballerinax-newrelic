@@ -60,12 +60,12 @@ If both are configured, `apiKey` in `Config.toml` will be overwritten by the env
 Environment variable can be configured for either a single user or multiple users.
 
 For a single user account:
-- Linux/Unix: `export BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY>"`
-- Windows: `set BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY>"`
+- Linux/Unix: `export BALLERINA_NEW_RELIC_API_KEY="<NEW_RELIC_LICENSE_KEY>"`
+- Windows: `set BALLERINA_NEW_RELIC_API_KEY="<NEW_RELIC_LICENSE_KEY>"`
 
 For multiple user accounts:
-- Linux/Unix: `export BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY_1>, <NEW_RELIC_LICENSE_KEY_2>"`
-- Windows: `set BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY_1>, <NEW_RELIC_LICENSE_KEY_2>"`
+- Linux/Unix: `export BALLERINA_NEW_RELIC_API_KEY="<NEW_RELIC_LICENSE_KEY_1>, <NEW_RELIC_LICENSE_KEY_2>"`
+- Windows: `set BALLERINA_NEW_RELIC_API_KEY="<NEW_RELIC_LICENSE_KEY_1>, <NEW_RELIC_LICENSE_KEY_2>"`
 
 ### Observe Metrics in New Relic
 
