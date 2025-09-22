@@ -24,7 +24,7 @@ configurable decimal tracingSamplerParam = 1;
 configurable int tracingReporterFlushInterval = 15000;
 configurable int tracingReporterBufferSize = 10000;
 
-function startTracerProvider(string apiKey) {
+function startTracerProvider(string|string[] apiKey) {
     string selectedSamplerType;
 
     if tracingSamplerType != "const" && tracingSamplerType != "ratelimiting" && tracingSamplerType != "probabilistic" {
@@ -37,7 +37,7 @@ function startTracerProvider(string apiKey) {
 
     string[] output = externStartPublishingTraces(apiKey, selectedSamplerType, tracingSamplerParam,
         tracingReporterFlushInterval, tracingReporterBufferSize);
-    
+
     foreach string outputLine in output {
         if (outputLine.startsWith("error:")) {
             log:printError(outputLine);
@@ -47,7 +47,7 @@ function startTracerProvider(string apiKey) {
     }
 }
 
-function externStartPublishingTraces(string apiKey, string samplerType,
+function externStartPublishingTraces(string|string[] apiKey, string samplerType,
         decimal samplerParam, int reporterFlushInterval, int reporterBufferSize) returns string[] = @java:Method {
     'class: "io.ballerina.observe.trace.newrelic.NewRelicTracerProvider",
     name: "startPublishingTraces"

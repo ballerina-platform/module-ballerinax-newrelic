@@ -37,6 +37,8 @@ import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static io.opentelemetry.semconv.resource.attributes.ResourceAttributes.SERVICE_NAME;
@@ -63,21 +65,44 @@ public class NewRelicTracerProvider implements TracerProvider {
         // Do Nothing
     }
 
-    public static BArray startPublishingTraces(BString apiKey, BString samplerType, BDecimal samplerParam,
-                                                int reporterFlushInterval, int reporterBufferSize) {
+    public static BArray startPublishingTraces(Object apiKey, BString samplerType, BDecimal samplerParam,
+                                               int reporterFlushInterval, int reporterBufferSize) {
         BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
 
-        OtlpGrpcSpanExporter exporter = OtlpGrpcSpanExporter.builder()
-                .setEndpoint(TRACE_REPORTER_ENDPOINT)
-                .addHeader(TRACE_API_KEY_HEADER, apiKey.getValue())
-                .build();
+        // Handle both string and string[] cases
+        List<String> apiKeyList = new ArrayList<>();
+        if (apiKey instanceof BString) {
+            String apiKeyValue = ((BString) apiKey).getValue();
+            apiKeyList.add(apiKeyValue);
+        } else if (apiKey instanceof BArray) {
+            BArray apiKeyArray = (BArray) apiKey;
+            if (apiKeyArray.size() > 0) {
+                for (String key : apiKeyArray.getStringArray()) {
+                    apiKeyList.add(key);
+                }
+            } else {
+                output.append(StringUtils.fromString("error: empty API key array provided"));
+                return output;
+            }
+        } else {
+            output.append(StringUtils.fromString("error: invalid API key type"));
+            return output;
+        }
 
-        tracerProviderBuilder = SdkTracerProvider.builder()
-                .addSpanProcessor(BatchSpanProcessor
-                        .builder(exporter)
-                        .setMaxExportBatchSize(reporterBufferSize)
-                        .setExporterTimeout(reporterFlushInterval, TimeUnit.MILLISECONDS)
-                        .build());
+        tracerProviderBuilder = SdkTracerProvider.builder();
+
+        for (String apiKeyValue : apiKeyList) {
+            OtlpGrpcSpanExporter exporter = OtlpGrpcSpanExporter.builder()
+                    .setEndpoint(TRACE_REPORTER_ENDPOINT)
+                    .addHeader(TRACE_API_KEY_HEADER, apiKeyValue)
+                    .build();
+
+            tracerProviderBuilder.addSpanProcessor(BatchSpanProcessor
+                    .builder(exporter)
+                    .setMaxExportBatchSize(reporterBufferSize)
+                    .setExporterTimeout(reporterFlushInterval, TimeUnit.MILLISECONDS)
+                    .build());
+        }
 
         tracerProviderBuilder.setSampler(selectSampler(samplerType, samplerParam));
         output.append(StringUtils.fromString("ballerina: started publishing traces to New Relic on " +
@@ -107,7 +132,7 @@ public class NewRelicTracerProvider implements TracerProvider {
 
         return tracerProviderBuilder.setResource(
                         Resource.create(Attributes.of(SERVICE_NAME, serviceName)))
-                .build().get(TRACER_NAME);
+                .build().get("newrelic");
     }
 
     @Override
