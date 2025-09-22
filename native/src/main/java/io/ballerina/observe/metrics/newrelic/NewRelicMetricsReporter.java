@@ -52,6 +52,8 @@ import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -82,10 +84,30 @@ public class NewRelicMetricsReporter {
         return executor;
     }
 
-    public static BArray sendMetrics(BString apiKey, int metricReporterFlushInterval,
+    public static BArray sendMetrics(Object apiKey, int metricReporterFlushInterval,
                                      int metricReporterClientTimeout, boolean isTraceLoggingEnabled,
                                      boolean isPayloadLoggingEnabled, BMap<BString, BString> additionalAttributes) {
         BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
+
+        // Handle both string and string[] cases
+        List<String> apiKeyList = new ArrayList<>();
+        if (apiKey instanceof BString) {
+            String apiKeyValue = ((BString) apiKey).getValue();
+            apiKeyList.add(apiKeyValue);
+        } else if (apiKey instanceof BArray) {
+            BArray apiKeyArray = (BArray) apiKey;
+            if (apiKeyArray.size() > 0) {
+                for (String key : apiKeyArray.getStringArray()) {
+                    apiKeyList.add(key);
+                }
+            } else {
+                output.append(StringUtils.fromString("error: empty API key array provided"));
+                return output;
+            }
+        } else {
+            output.append(StringUtils.fromString("error: invalid API key type"));
+            return output;
+        }
 
         if (isTraceLoggingEnabled) {
             logger.setLevel(Level.INFO);
@@ -106,14 +128,18 @@ public class NewRelicMetricsReporter {
 
         MetricBatchSenderFactory factory = MetricBatchSenderFactory.fromHttpImplementation(OkHttpPoster::new);
 
-        SenderConfiguration config = factory
-                .configureWith(apiKey.getValue())
-                .httpPoster(httpPoster)
-                .endpoint(endpointUrl)
-                .auditLoggingEnabled(isTraceLoggingEnabled)
-                .build();
+        List<MetricBatchSender> senders = new ArrayList<>();
+        for (String apiKeyValue : apiKeyList) {
+            SenderConfiguration config = factory
+                    .configureWith(apiKeyValue)
+                    .httpPoster(httpPoster)
+                    .endpoint(endpointUrl)
+                    .auditLoggingEnabled(isTraceLoggingEnabled)
+                    .build();
 
-        MetricBatchSender sender = MetricBatchSender.create(config);
+            MetricBatchSender sender = MetricBatchSender.create(config);
+            senders.add(sender);
+        }
 
         // Create common attributes for all metrics
         Attributes commonAttributes = null;
@@ -138,12 +164,14 @@ public class NewRelicMetricsReporter {
                 logger.info("Metric buffer: " + metricBuffer);
             }
             MetricBatch batch = metricBuffer.createBatch();
-            try {
-                Response response = sender.sendBatch(batch);
-                logger.info("New Relic metric reporter status: " + response.getStatusMessage() + ", response: "
-                        + response.getBody() + ", payload metrics count: " + metricCount);
-            } catch (ResponseException e) {
-                logger.severe("Error sending metrics to New Relic: " + e.getMessage());
+            for (MetricBatchSender sender : senders) {
+                try {
+                    Response response = sender.sendBatch(batch);
+                    logger.info("New Relic metric reporter status: " + response.getStatusCode() + ", response: "
+                            + response.getBody() + ", payload metrics count: " + metricCount);
+                } catch (ResponseException e) {
+                    logger.severe("Error sending metrics to New Relic: " + e.getMessage());
+                }
             }
         }, SCHEDULE_EXECUTOR_INITIAL_DELAY, metricReporterFlushInterval, TimeUnit.MILLISECONDS);
 
