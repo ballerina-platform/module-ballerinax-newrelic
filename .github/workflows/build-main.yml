@@ -62,10 +62,3 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: distribution
-          path: |
-            ballerina/build/distributions/newrelic-extension-ballerina-*.zip
-          if-no-files-found: error
