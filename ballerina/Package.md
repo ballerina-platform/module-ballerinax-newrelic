@@ -24,6 +24,7 @@ observabilityIncluded=true
 ```
 
 To enable the extension and publish traces and metrics to New Relic, add the following to the `Config.toml` when running your program.
+
 ```toml
 [ballerina.observe]
 tracingEnabled=true
@@ -46,5 +47,56 @@ isPayloadLoggingEnabled=false       # Optional Configuration. Default value is f
 key1 = "<VALUE_1>"
 key2 = "<VALUE_2>"
 ```
+
+Users can also configure multiple API keys for different New Relic user accounts as given below.
+
+```toml
+[ballerinax.newrelic]
+apiKey=["<NEW_RELIC_LICENSE_KEY_1>", "<NEW_RELIC_LICENSE_KEY_2>"]   # Mandatory Configuration.
+```
+
 User can configure the environment variable `BALLERINA_NEW_RELIC_API_KEY` instead of `apiKey` in `Config.toml`.
 If both are configured, `apiKey` in `Config.toml` will be overwritten by the environment variable value.
+Environment variable can be configured for either a single user or multiple users.
+
+For a single user account:
+- Linux/Unix: `export BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY>"`
+- Windows: `set BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY>"`
+
+For multiple user accounts:
+- Linux/Unix: `export BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY_1>, <NEW_RELIC_LICENSE_KEY_2>"`
+- Windows: `set BALLERINA_NEW_RELIC_API_KEY = "<NEW_RELIC_LICENSE_KEY_1>, <NEW_RELIC_LICENSE_KEY_2>"`
+
+### Observe Metrics in New Relic
+
+Instead of using prometheus as an intermediate metric reporter that remote writes the metrics to New Relic,
+Ballerina New Relic Observability Extension directly publishes metrics to New Relic on the following metric API `https://metric-api.newrelic.com/metric/v1`.
+
+Instrumentation of metrics is done using the [com.newrelic.telemetry](https://github.com/newrelic/newrelic-telemetry-sdk-java).
+
+#### Available Metrics
+
+The exporter provides the following metrics.
+
+|Metric Name|Description|
+|---|---|
+|response_time_seconds_value|Response time of a HTTP request in seconds|
+|response_time_seconds_max|Maximum response time of a HTTP request|
+|response_time_seconds_min|Minimum response time of a HTTP request|
+|response_time_seconds_mean|Average response time of a HTTP request|
+|response_time_seconds_stdDev|Standard deviation of response time of a HTTP request|
+|response_time_seconds|Summary of HTTP request-response times across various time frames and quantiles|
+|response_time_nanoseconds_total_value|Response time of a HTTP request in nano seconds|
+|requests_total_value|Total number of requests|
+|response_errors_total_value|Total number of response errors|
+|inprogress_requests_value|Total number of inprogress requests|
+|kafka_publishers_value|Number of publishers in kafka|
+|kafka_consumers_value|Number of consumers in kafka|
+|kafka_errors_value|Number of errors happened while publishing in kafka|
+
+### Observe Traces in New Relic
+
+Ballerina New Relic Observability Extension directly publishes traces to New Relic on the following trace API `https://otlp.nr-data.net:4317`.
+Traces are published to New Relic on OpenTelemetry format.
+
+Instrumentation of traces is done using the [io.opentelemetry](https://github.com/open-telemetry/opentelemetry-java) and `GRPC` protocol is used send traces.

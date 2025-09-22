@@ -17,6 +17,7 @@
 import ballerina/observe;
 import ballerina/os;
 import ballerina/log;
+import ballerina/regex;
 
 const REPORTER_NAME = "newrelic";
 const PROVIDER_NAME = "newrelic";
@@ -30,7 +31,7 @@ function init() returns error? {
     string|string[] configurableAPIKey = apiKey;
 
     if (os:getEnv(NEW_RELIC_API_KEY_ENV) != "") {
-        configurableAPIKey = os:getEnv(NEW_RELIC_API_KEY_ENV);
+        configurableAPIKey = parseStringArray(os:getEnv(NEW_RELIC_API_KEY_ENV));
         log:printInfo("Using New Relic API key from environment variable " + NEW_RELIC_API_KEY_ENV);
     }
 
@@ -44,4 +45,21 @@ function init() returns error? {
             startMetricsReporter(configurableAPIKey);
         }
     }
+}
+
+// Function to parse string array from environment variable
+function parseStringArray(string envValue) returns string[]|string {
+    string[] parts = regex:split(envValue, ",");
+    
+    if (parts.length() == 1) {
+        return string:trim(envValue);
+    }
+
+    string[] result = [];
+    foreach string part in parts {
+        string trimmed = string:trim(part);
+        result.push(trimmed);
+    }
+    
+    return result;
 }
