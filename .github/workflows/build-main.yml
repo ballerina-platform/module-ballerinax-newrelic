@@ -28,12 +28,12 @@ jobs:
           java-version: 17.0.7
       - name: Set up Ballerina
         if: github.event_name == 'workflow_dispatch'
-        uses: ballerina-platform/setup-ballerina@v1.1.0
+        uses: ballerina-platform/setup-ballerina@v1.1.3
         with:
           version: ${{ github.event.inputs.ballerina_version }}
       - name: Set up Ballerina
         if: github.event_name == 'push'
-        uses: ballerina-platform/setup-ballerina@v1.1.0
+        uses: ballerina-platform/setup-ballerina@v1.1.3
         with:
           version: ${{ env.BALLERINA_DISTRIBUTION_VERSION }}
       - name: Change to Timestamped Version
@@ -59,13 +59,6 @@ jobs:
           ./gradlew clean build publish --stacktrace --scan --console=plain --no-daemon
           ./gradlew codeCoverageReport --console=plain --no-daemon
       - name: Upload Coverage Report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: distribution
-          path: |
-            ballerina/build/distributions/newrelic-extension-ballerina-*.zip
-          if-no-files-found: error
