@@ -167,7 +167,7 @@ public class NewRelicMetricsReporter {
             for (MetricBatchSender sender : senders) {
                 try {
                     Response response = sender.sendBatch(batch);
-                    logger.info("New Relic metric reporter status: " + response.getStatusMessage() + ", response: "
+                    logger.info("New Relic metric reporter status: " + response.getStatusCode() + ", response: "
                             + response.getBody() + ", payload metrics count: " + metricCount);
                 } catch (ResponseException e) {
                     logger.severe("Error sending metrics to New Relic: " + e.getMessage());

@@ -132,7 +132,7 @@ public class NewRelicTracerProvider implements TracerProvider {
 
         return tracerProviderBuilder.setResource(
                         Resource.create(Attributes.of(SERVICE_NAME, serviceName)))
-                .build().get("newrelic");
+                .build().get(TRACER_NAME);
     }
 
     @Override
