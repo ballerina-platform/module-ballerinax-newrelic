@@ -66,8 +66,9 @@ public class NewRelicTracerProvider implements TracerProvider {
         // Do Nothing
     }
 
-    public static BArray startPublishingTraces(Object apiKey, BString region, BString samplerType, BDecimal samplerParam,
-                                                int reporterFlushInterval, int reporterBufferSize) {
+    public static BArray startPublishingTraces(Object apiKey, BString region, BString samplerType,
+                                               BDecimal samplerParam, int reporterFlushInterval,
+                                               int reporterBufferSize) {
         BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
 
         // Handle both string and string[] cases
