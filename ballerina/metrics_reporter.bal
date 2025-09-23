@@ -22,7 +22,7 @@ configurable int metricReporterClientTimeout = 10000;
 configurable map<string> additionalAttributes = {};
 
 isolated function startMetricsReporter(string|string[] apiKey) {
-    string[] output = externSendMetrics(apiKey, metricReporterFlushInterval, metricReporterClientTimeout, 
+    string[] output = externSendMetrics(apiKey, region, metricReporterFlushInterval, metricReporterClientTimeout, 
         isTraceLoggingEnabled, isPayloadLoggingEnabled, additionalAttributes);
     
     foreach string outputLine in output {
@@ -34,7 +34,7 @@ isolated function startMetricsReporter(string|string[] apiKey) {
     }
 }
 
-isolated function externSendMetrics(string|string[] apiKey, int metricReporterFlushInterval, int metricReporterClientTimeout, 
+isolated function externSendMetrics(string|string[] apiKey, string region, int metricReporterFlushInterval, int metricReporterClientTimeout, 
     boolean isTraceLoggingEnabled, boolean isPayloadLoggingEnabled, map<string> additionalAttributes) returns string[] = @java:Method {
     'class: "io.ballerina.observe.metrics.newrelic.NewRelicMetricsReporter",
     name: "sendMetrics"

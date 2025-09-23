@@ -51,6 +51,7 @@ public class NewRelicTracerProvider implements TracerProvider {
     private static final String CONST_SAMPLER_TYPE = "const";
     private static final String PROBABILISTIC_SAMPLER_TYPE = "probabilistic";
     private static final String TRACE_REPORTER_ENDPOINT = "https://otlp.nr-data.net:4317";
+    private static final String TRACE_REPORTER_EU_ENDPOINT = "https://otlp.eu01.nr-data.net:4317";
     private static final String TRACE_API_KEY_HEADER = "Api-Key";
 
     static SdkTracerProviderBuilder tracerProviderBuilder;
@@ -65,7 +66,7 @@ public class NewRelicTracerProvider implements TracerProvider {
         // Do Nothing
     }
 
-    public static BArray startPublishingTraces(Object apiKey, BString samplerType, BDecimal samplerParam,
+    public static BArray startPublishingTraces(Object apiKey, BString region, BString samplerType, BDecimal samplerParam,
                                                 int reporterFlushInterval, int reporterBufferSize) {
         BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
 
@@ -87,6 +88,11 @@ public class NewRelicTracerProvider implements TracerProvider {
         } else {
             output.append(StringUtils.fromString("error: invalid API key type"));
             return output;
+        }
+
+        String endpoint = TRACE_REPORTER_ENDPOINT;
+        if (region != null && (region.getValue().equals("EU") || region.getValue().equals("eu"))) {
+            endpoint = TRACE_REPORTER_EU_ENDPOINT;
         }
 
         tracerProviderBuilder = SdkTracerProvider.builder();
