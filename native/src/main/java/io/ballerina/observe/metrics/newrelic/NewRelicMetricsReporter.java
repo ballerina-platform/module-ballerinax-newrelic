@@ -182,7 +182,7 @@ public class NewRelicMetricsReporter {
         }, SCHEDULE_EXECUTOR_INITIAL_DELAY, metricReporterFlushInterval, TimeUnit.MILLISECONDS);
 
         output.append(StringUtils.fromString("ballerina: started publishing metrics to New Relic on " +
-                METRIC_REPORTER_ENDPOINT));
+                endpoint));
 
         return output;
     }

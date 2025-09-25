@@ -113,7 +113,7 @@ public class NewRelicTracerProvider implements TracerProvider {
 
         tracerProviderBuilder.setSampler(selectSampler(samplerType, samplerParam));
         output.append(StringUtils.fromString("ballerina: started publishing traces to New Relic on " +
-                TRACE_REPORTER_ENDPOINT));
+                endpoint));
 
         return output;
     }
