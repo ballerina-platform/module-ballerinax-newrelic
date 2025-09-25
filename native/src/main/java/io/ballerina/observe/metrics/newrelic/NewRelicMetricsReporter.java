@@ -68,6 +68,7 @@ import static io.ballerina.observe.metrics.newrelic.ObserveNativeImplConstants.P
  */
 public class NewRelicMetricsReporter {
     private static final String METRIC_REPORTER_ENDPOINT = "https://metric-api.newrelic.com/metric/v1";
+    private static final String METRIC_REPORTER_EU_ENDPOINT = "https://metric-api.eu.newrelic.com/metric/v1";
     private static final int SCHEDULE_EXECUTOR_INITIAL_DELAY = 0;
     private static final Logger logger = Logger.getLogger(NewRelicMetricsReporter.class.getName());
 
@@ -84,7 +85,7 @@ public class NewRelicMetricsReporter {
         return executor;
     }
 
-    public static BArray sendMetrics(Object apiKey, int metricReporterFlushInterval,
+    public static BArray sendMetrics(Object apiKey, BString region, int metricReporterFlushInterval,
                                      int metricReporterClientTimeout, boolean isTraceLoggingEnabled,
                                      boolean isPayloadLoggingEnabled, BMap<BString, BString> additionalAttributes) {
         BArray output = ValueCreator.createArrayValue(TypeCreator.createArrayType(PredefinedTypes.TYPE_STRING));
@@ -107,6 +108,11 @@ public class NewRelicMetricsReporter {
         } else {
             output.append(StringUtils.fromString("error: invalid API key type"));
             return output;
+        }
+
+        String endpoint = METRIC_REPORTER_ENDPOINT;
+        if (region != null && (region.getValue().equals("EU") || region.getValue().equals("eu"))) {
+            endpoint = METRIC_REPORTER_EU_ENDPOINT;
         }
 
         if (isTraceLoggingEnabled) {
@@ -176,7 +182,7 @@ public class NewRelicMetricsReporter {
         }, SCHEDULE_EXECUTOR_INITIAL_DELAY, metricReporterFlushInterval, TimeUnit.MILLISECONDS);
 
         output.append(StringUtils.fromString("ballerina: started publishing metrics to New Relic on " +
-                METRIC_REPORTER_ENDPOINT));
+                endpoint));
 
         return output;
     }

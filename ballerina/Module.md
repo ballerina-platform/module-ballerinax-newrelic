@@ -34,6 +34,7 @@ metricsReporter="newrelic"
 
 [ballerinax.newrelic]
 apiKey="<NEW_RELIC_LICENSE_KEY>"    # Mandatory Configuration.
+region="<NEW_RELIC_REGION>"         # Optional Configuration ('us' or 'eu'). Default value is 'us'
 tracingSamplerType="const"          # Optional Configuration. Default value is 'const'
 tracingSamplerParam=1               # Optional Configuration. Default value is 1
 tracingReporterFlushInterval=15000  # Optional Configuration. Default value is 15000 milliseconds
