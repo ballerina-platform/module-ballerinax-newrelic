@@ -18,7 +18,7 @@
 org = "ballerinax"
 name = "newrelic"
 version = "@toml.version@"
-keywords = ["Type/Connector", "Area/Developer Tools", "Vendor/New Relic", "Observability", "tracing", "metrics"]
+keywords = ["Type/Driver", "Area/Developer Tools", "Vendor/New Relic", "Observability", "tracing", "metrics"]
 distribution = "2201.11.0"
 
 [platform.java21]
