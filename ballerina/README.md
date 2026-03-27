@@ -1,8 +1,13 @@
-## Package Overview
+## Overview
 
-The New Relic Observability Extension is one of the observability extensions in the <a target="_blank" href="https://ballerina.io/">Ballerina</a> language.
+The New Relic Observability Extension provides an implementation for tracing and metrics, publishing both metrics and traces to a [New Relic](https://newrelic.com/) platform.
 
-It provides an implementation for tracing and metrics and, publishing both metrics and traces to a <a target="_blank" href="https://newrelic.com/">New Relic</a> platform.
+### Key Features
+
+- Publish traces and metrics directly to New Relic
+- Support for multiple API keys for different New Relic accounts
+- Configurable sampler, reporter, and custom metric attributes
+- Available metrics including response times, request counts, error rates, and Kafka stats
 
 ## Enabling New Relic Extension
 
