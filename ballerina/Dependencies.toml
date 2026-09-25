@@ -5,12 +5,12 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.11.0"
+distribution-version = "2201.14.0-20260917-124200-7f273e6a"
 
 [[package]]
 org = "ballerina"
 name = "io"
-version = "1.7.0"
+version = "1.8.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.value"}
@@ -23,6 +23,41 @@ version = "0.0.0"
 modules = [
 	{org = "ballerina", packageName = "jballerina.java", moduleName = "jballerina.java"}
 ]
+
+[[package]]
+org = "ballerina"
+name = "lang.__internal"
+version = "0.0.0"
+scope = "testOnly"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.object"}
+]
+
+[[package]]
+org = "ballerina"
+name = "lang.array"
+version = "0.0.0"
+scope = "testOnly"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.__internal"}
+]
+
+[[package]]
+org = "ballerina"
+name = "lang.error"
+version = "0.0.0"
+scope = "testOnly"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"}
+]
+
+[[package]]
+org = "ballerina"
+name = "lang.object"
+version = "0.0.0"
+scope = "testOnly"
 
 [[package]]
 org = "ballerina"
@@ -52,7 +87,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "log"
-version = "2.11.0"
+version = "2.17.0"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -66,7 +101,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "observe"
-version = "1.4.0"
+version = "1.7.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -78,7 +113,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "os"
-version = "1.9.0"
+version = "1.10.1"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"}
@@ -100,15 +135,30 @@ modules = [
 ]
 
 [[package]]
+org = "ballerina"
+name = "test"
+version = "0.0.0"
+scope = "testOnly"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.array"},
+	{org = "ballerina", name = "lang.error"}
+]
+modules = [
+	{org = "ballerina", packageName = "test", moduleName = "test"}
+]
+
+[[package]]
 org = "ballerinax"
 name = "newrelic"
-version = "1.0.3"
+version = "1.1.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "observe"},
 	{org = "ballerina", name = "os"},
-	{org = "ballerina", name = "regex"}
+	{org = "ballerina", name = "regex"},
+	{org = "ballerina", name = "test"}
 ]
 modules = [
 	{org = "ballerinax", packageName = "newrelic", moduleName = "newrelic"}

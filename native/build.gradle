@@ -18,6 +18,7 @@
 
 plugins {
     id 'java-library'
+    id 'jacoco'
 }
 
 description = 'Ballerina - New Relic Extension - Native Module'
@@ -31,12 +32,50 @@ dependencies {
     implementation "io.opentelemetry:opentelemetry-sdk-trace:${openTelemetrySDKVersion}"
     implementation "io.opentelemetry:opentelemetry-sdk-common:${openTelemetrySDKVersion}"
     implementation "io.opentelemetry.semconv:opentelemetry-semconv:${openTelemetrySemconvVersion}"
-    implementation "io.opentelemetry:opentelemetry-exporter-otlp-trace:${openTelemetryExporterVersion}"
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp:${openTelemetryExporterVersion}"
+    implementation "io.opentelemetry:opentelemetry-exporter-common:${openTelemetryExporterVersion}"
+    implementation "io.opentelemetry:opentelemetry-exporter-sender-grpc-managed-channel:${openTelemetryExporterVersion}"
     implementation "io.opentelemetry:opentelemetry-extension-trace-propagators:${openTelemetryVersion}"
     implementation("com.google.guava:guava:${guavaVersion}") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
     }
     implementation("com.google.guava:failureaccess:${failureAccessVersion}")
+
+    // Shipped in the bala via externalJars rather than declared above; the
+    // exporter needs a gRPC channel provider at runtime.
+    testRuntimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    testImplementation "org.testng:testng:${testngVersion}"
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "io.opentelemetry:opentelemetry-sdk-testing:${openTelemetrySDKVersion}"
+}
+
+// exporter-otlp pulls the okhttp gRPC sender in transitively; the packaged bala
+// only ships the grpc-managed-channel one, so tests must not see both.
+configurations.testRuntimeClasspath {
+    exclude group: 'io.opentelemetry', module: 'opentelemetry-exporter-sender-okhttp'
+}
+
+test {
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
+
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+        showStackTraces true
+        showStandardStreams true
+        exceptionFormat "full"
+    }
+
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }
 
 jar {
@@ -69,7 +108,7 @@ publishing {
 
 task copyJavaClassFiles(type: Copy) {
     dependsOn(compileJava)
-    from("${project.buildDir}/classes") {
+    from("${project.buildDir}/classes/java/main") {
         exclude '**/module-info.class'
         include '**/*.class'
     }

@@ -1,0 +1,16 @@
+# The New Relic API key is a dummy value: no real New Relic endpoint is required for
+# these tests. Tracing uses an always-off sampler so no spans are exported, and the
+# metrics reporter flush interval is long so it reports at most once.
+[ballerina.observe]
+tracingEnabled=true
+tracingProvider="newrelic"
+metricsEnabled=true
+metricsReporter="newrelic"
+
+[ballerinax.newrelic]
+apiKey="test-api-key"
+tracingSamplerType="const"
+tracingSamplerParam=0
+metricReporterFlushInterval=600000
+metricReporterClientTimeout=2
+

@@ -1,0 +1,4 @@
+# The module's init() fails when no API key is configured, which would prevent
+# the tests from running.
+[ballerinax.newrelic]
+apiKey = "test-api-key"

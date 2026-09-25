@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.process.ExecOperations
+
+import javax.inject.Inject
+
+abstract class BallerinaExecHelper {
+    @Inject abstract ExecOperations getExecOperations()
+}
+
+description = 'Ballerina - New Relic Extension - Ballerina Tests'
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name, 'Implementation-Version': project.version)
+    }
+}
+
+def groupParams = ""
+def disableGroups = ""
+def windowsDisableGroups = "--disable-groups disabledOnWindows"
+def debugParams = ""
+def balJavaDebugParam = ""
+def testParams = "--code-coverage --coverage-format=xml"
+def nativeFlag = ""
+def ballerinaDockerTag = ""
+
+def packageOrg = "ballerinax"
+def packageName = "newrelic"
+def tomlVersion = stripBallerinaExtensionVersion("${project.version}")
+def testPackages = ["newrelic-tests"]
+
+// Only used for -PuseLocalBal: the same distribution unpackJballerinaTools
+// extracts for :newrelic-extension-ballerina:build (not whatever `bal` happens
+// to be on PATH), so these tests resolve the locally-published
+// ballerinax/newrelic bala with a matching Ballerina version.
+def balDistributionBin = "${project.rootDir}/ballerina/build/jballerina-tools-${ballerinaLangVersion}/bin"
+// Shared with the host so the containerized `bal` sees the bala
+// :newrelic-extension-ballerina:publishBalaFileToLocal pushed to the 'local'
+// repository, plus the Central download cache (avoids re-pulling every run).
+def ballerinaHomeDir = "${System.getProperty('user.home')}/.ballerina"
+
+def ballerinaTestTomlFile = new File("${project.projectDir}/newrelic-tests/Ballerina.toml")
+def ballerinaTestTomlFilePlaceHolder = new File("${project.rootDir}/build-config/resources/tests/Ballerina.toml")
+
+def stripBallerinaExtensionVersion(String extVersion) {
+    if (extVersion.matches(project.ext.timestampedVersionRegex)) {
+        def splitVersion = extVersion.split('-');
+        if (splitVersion.length > 3) {
+            def strippedValues = splitVersion[0..-4]
+            return strippedValues.join('-')
+        } else {
+            return extVersion
+        }
+    } else {
+        return extVersion.replace("${project.ext.snapshotVersion}", "")
+    }
+}
+
+def skipTests = false
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(":newrelic-extension-tests:ballerinaTest")) {
+        skipTests = true
+    }
+}
+
+// newrelic's own ballerinaLangVersion is a timestamped snapshot (matches
+// ext.timestampedVersionRegex), which has no matching `ballerina/ballerina`
+// image tag; the 'nightly' tag is the closest available image in that case.
+// A stable, non-snapshot langVersion would resolve to an exact tag instead.
+static boolean isTimeStampVersion(String version) {
+    return version.trim().split("-").length > 1
+}
+
+static String resolveDockerTag(Project project, String ballerinaLangVersion) {
+    if (project.hasProperty('buildUsingDocker')) {
+        def tag = project.findProperty('buildUsingDocker')
+        return tag == '' ? 'nightly' : tag
+    }
+    return isTimeStampVersion(ballerinaLangVersion) ? 'nightly' : ballerinaLangVersion
+}
+
+task initializeVariables {
+    if (project.hasProperty("groups")) {
+        groupParams = "--groups ${project.findProperty("groups")}"
+    }
+    if (project.hasProperty("disable")) {
+        disableGroups = "--disable-groups ${project.findProperty("disable")}"
+    }
+    if (project.hasProperty("debug")) {
+        debugParams = "--debug ${project.findProperty("debug")}"
+    }
+    if (project.hasProperty("balJavaDebug")) {
+        balJavaDebugParam = "BAL_JAVA_DEBUG=${project.findProperty("balJavaDebug")}"
+    }
+    if (project.hasProperty('balNativeTest')) {
+        nativeFlag = '--native'
+    }
+    if (project.hasProperty('balTests')) {
+        testPackages = project.findProperty('balTests').toString().split(",")
+    }
+    if (project.hasProperty('skipBalTests')) {
+        project.findProperty('skipBalTests').toString().split(",").each {testPackage ->
+            testPackages.remove(testPackage)
+        }
+    }
+    if (!project.hasProperty('useLocalBal')) {
+        ballerinaDockerTag = resolveDockerTag(project, ballerinaLangVersion)
+        println("[Info] running newrelic-tests against the ballerina/ballerina:${ballerinaDockerTag} Docker image")
+    } else {
+        println("[Info] running newrelic-tests against the local Ballerina distribution")
+    }
+}
+
+task updateTomlVerions {
+    dependsOn ":newrelic-extension-ballerina:build"
+
+    doLast {
+        def newConfig = ballerinaTestTomlFilePlaceHolder.text.replace("@toml.version@", tomlVersion)
+        ballerinaTestTomlFile.text = newConfig
+    }
+}
+
+task ballerinaTest {
+    def execHelper = project.objects.newInstance(BallerinaExecHelper)
+    dependsOn ":newrelic-extension-ballerina:build"
+    dependsOn ":newrelic-extension-ballerina:publishBalaFileToLocal"
+    dependsOn initializeVariables
+    dependsOn updateTomlVerions
+
+    doLast {
+        testPackages.each { testPackage ->
+            def testPackageDir = "${project.projectDir}/${testPackage}"
+            if (project.hasProperty('useLocalBal')) {
+                execHelper.execOperations.exec {
+                    workingDir testPackageDir
+                    environment "JAVA_OPTS", "-DBALLERINA_DEV_COMPILE_BALLERINA_ORG=true"
+                    def balTestArgs = "${testParams} ${nativeFlag} ${groupParams} ${disableGroups}" +
+                            " ${windowsDisableGroups} ${debugParams}"
+                    // Argument-list execution (no outer shell) so a checkout path
+                    // containing spaces can't be mis-split - same fix already
+                    // applied to the Docker `bal test`/`bal pack` invocations.
+                    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                        commandLine('cmd', '/c', "${balDistributionBin}/bal.bat", 'test',
+                                *balTestArgs.split(/\s+/))
+                    } else {
+                        commandLine("${balDistributionBin}/bal", 'test', *balTestArgs.split(/\s+/))
+                    }
+                }
+            } else {
+                // --net=host lets the containerized `bal test` reach the
+                // service it starts on localhost; the .ballerina
+                // mount shares the locally-published ballerinax/newrelic bala
+                // and the Central download cache with the container.
+                // -u root is needed to write test output/coverage back to the
+                // host-owned mounted directories. Passing -e HOME=... does NOT
+                // work here: Java's user.home (which `bal` uses to find its
+                // repo dir) is resolved from the OS user database for the
+                // running uid, not from $HOME - and root's entry is /root
+                // regardless of the HOME env var - so the mount target is
+                // /root/.ballerina, not the image's normal /home/ballerina.
+                execHelper.execOperations.exec {
+                    environment "DOCKER_DEFAULT_PLATFORM", "linux/amd64"
+                    environment "JAVA_OPTS", "-DBALLERINA_DEV_COMPILE_BALLERINA_ORG=true"
+                    def balTestArgs = "${testParams} ${nativeFlag} ${groupParams} ${disableGroups}" +
+                            " ${windowsDisableGroups} ${debugParams}"
+                    commandLine 'docker', 'run', '--rm', '--net=host', '-u', 'root',
+                            '-v', "${ballerinaHomeDir}:/root/.ballerina",
+                            '-v', "${testPackageDir}:/home/ballerina/${testPackage}",
+                            '-w', "/home/ballerina/${testPackage}",
+                            "ballerina/ballerina:${ballerinaDockerTag}",
+                            'bal', 'test', *balTestArgs.split(/\s+/)
+                }
+            }
+        }
+    }
+}
+
+test.dependsOn ballerinaTest
+
+clean {
+    delete "${project.projectDir}/target"
+    delete "${project.projectDir}/Ballerina.lock"
+    delete "${project.projectDir}/ballerina-internal.log"
+}

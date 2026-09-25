@@ -3,3 +3,5 @@ fixes:
   
 ignore:
   - "**/test"
+  - "**/tests"
+  - "ballerina-tests"
