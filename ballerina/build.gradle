@@ -17,8 +17,15 @@
  */
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import javax.inject.Inject
 
 description = 'Ballerina - New Relic Extension - Ballerina Module'
+
+abstract class ExecHelper {
+    @Inject
+    abstract ExecOperations getExecOperations()
+}
+def execHelper = project.objects.newInstance(ExecHelper)
 
 configurations {
     nativeJar {
@@ -85,8 +92,8 @@ def packageName = "newrelic"
 def ballerinaTomlFile = new File("${project.projectDir}/Ballerina.toml")
 def ballerinaTomlFilePlaceHolder = new File("${project.rootDir}/build-config/resources/Ballerina.toml")
 def artifactBallerinaDocs = file("${project.projectDir}/build/docs_parent/")
-def artifactCacheParent = file("${project.buildDir}/cache_parent/")
-def artifactLibParent = file("${project.buildDir}/lib_parent/")
+def artifactCacheParent = layout.buildDirectory.dir("cache_parent").get().asFile
+def artifactLibParent = layout.buildDirectory.dir("lib_parent").get().asFile
 def snapshotVersion = "-SNAPSHOT"
 def tomlVersion = stripBallerinaExtensionVersion("${project.version}")
 def ballerinaCentralAccessToken = System.getenv('BALLERINA_CENTRAL_ACCESS_TOKEN')
@@ -201,7 +208,7 @@ task ballerinaBuild {
 
         copy {
             from file("$project.projectDir/target/apidocs/${packageName}")
-            into file("$project.buildDir/docs_parent/docs/${packageName}")
+            into layout.buildDirectory.dir("docs_parent/docs/${packageName}")
         }
     }
 
@@ -211,7 +218,7 @@ task ballerinaBuild {
 }
 
 task createArtifactZip(type: Zip) {
-    destinationDirectory = file("${project.buildDir}/distributions")
+    destinationDirectory = layout.buildDirectory.dir("distributions")
     from ballerinaBuild
 }
 
@@ -284,7 +291,7 @@ task publishBalaFileToLocal {
 
     doLast {
         if (!skipTests) {
-            exec {
+            execHelper.execOperations.exec {
                 workingDir "${project.rootDir}/ballerina"
                 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                     commandLine 'cmd', '/c', "bal.bat push --repository=local" +

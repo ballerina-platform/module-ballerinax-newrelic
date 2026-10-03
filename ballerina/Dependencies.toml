@@ -5,12 +5,12 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.11.0"
+distribution-version = "2201.13.0"
 
 [[package]]
 org = "ballerina"
 name = "io"
-version = "1.7.0"
+version = "1.8.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.value"}
@@ -52,7 +52,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "log"
-version = "2.11.0"
+version = "2.17.1"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -66,7 +66,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "observe"
-version = "1.4.0"
+version = "1.7.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
@@ -78,7 +78,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "os"
-version = "1.9.0"
+version = "1.10.2"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"}
@@ -102,7 +102,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "newrelic"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "log"},

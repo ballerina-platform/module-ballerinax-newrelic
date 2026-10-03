@@ -17,7 +17,7 @@
  */
 
 plugins {
-    id "com.gradle.enterprise" version "3.2"
+    id "com.gradle.develocity" version "3.19.2"
 }
 
 rootProject.name = 'module-ballerinax-newrelic'
@@ -32,9 +32,9 @@ project(':newrelic-extension-ballerina').projectDir = file('ballerina')
 project(':newrelic-extension-native').projectDir = file('native')
 //project(':newrelic-extension-tests').projectDir = file('tests')
 
-gradleEnterprise {
+develocity {
     buildScan {
-        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
-        termsOfServiceAgree = 'yes'
+        termsOfUseUrl = 'https://gradle.com/help/legal-terms-of-use'
+        termsOfUseAgree = 'yes'
     }
 }
