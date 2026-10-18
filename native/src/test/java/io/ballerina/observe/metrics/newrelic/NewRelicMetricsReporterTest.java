@@ -239,9 +239,7 @@ public class NewRelicMetricsReporterTest {
     }
 
     private MetricBuffer generateMetricBuffer() throws ReflectiveOperationException {
-        Method method = NewRelicMetricsReporter.class.getDeclaredMethod("generateMetricBuffer", Attributes.class);
-        method.setAccessible(true);
-        return (MetricBuffer) method.invoke(null, new Attributes());
+        return generateMetricBuffer(new HashMap<>(), new HashMap<>(), 1000, 1001);
     }
 
     private MetricBuffer generateMetricBuffer(Map<MetricId, Long> lastReportedCounterValues,
