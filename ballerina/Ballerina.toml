@@ -17,7 +17,7 @@
 [package]
 org = "ballerinax"
 name = "newrelic"
-version = "1.1.0"
+version = "1.1.1"
 keywords = ["Type/Driver", "Area/Developer Tools", "Vendor/New Relic", "Observability", "tracing", "metrics"]
 distribution = "2201.14.0"
 
@@ -31,10 +31,10 @@ sticky = true
 graalvmCompatible = true
 
 [[platform.java25.dependency]]
-path = "../native/build/libs/newrelic-extension-native-1.1.0.jar"
+path = "../native/build/libs/newrelic-extension-native-1.1.1-SNAPSHOT.jar"
 groupId = "ballerina"
 artifactId = "newrelic-extension-native"
-version = "1.1.0"
+version = "1.1.1-SNAPSHOT"
 
 [[platform.java25.dependency]]
 path = "./lib/telemetry-all-0.16.0.jar"
