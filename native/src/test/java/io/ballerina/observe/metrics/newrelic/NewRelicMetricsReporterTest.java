@@ -45,6 +45,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -166,6 +167,41 @@ public class NewRelicMetricsReporterTest {
     }
 
     @Test
+    public void testGenerateMetricBufferReportsCounterDeltasAcrossFlushes() throws ReflectiveOperationException {
+        Counter counter = mock(Counter.class);
+        MetricId metricId = new MetricId("requests_total", "requests", List.of(Tag.of("service", "test")));
+        when(counter.getId()).thenReturn(metricId);
+        when(counter.getValue()).thenReturn(10L, 10L, 20L);
+        when(registry.getAllMetrics()).thenReturn(new io.ballerina.runtime.observability.metrics.Metric[]{counter});
+
+        Map<MetricId, Long> lastReportedCounterValues = new HashMap<>();
+        Map<MetricId, Long> counterValuesInBatch = new HashMap<>();
+        MetricBuffer firstFlush = generateMetricBuffer(lastReportedCounterValues, counterValuesInBatch, 1000, 6000);
+
+        assertEquals(firstFlush.size(), 1);
+        Count firstCount = (Count) firstFlush.createBatch().getTelemetry().iterator().next();
+        assertEquals(firstCount.getValue(), 10.0);
+        assertEquals(firstCount.getStartTimeMs(), 1000L);
+        assertEquals(firstCount.getEndTimeMs(), 6000L);
+        lastReportedCounterValues.putAll(counterValuesInBatch);
+
+        counterValuesInBatch.clear();
+        MetricBuffer idleFlush = generateMetricBuffer(lastReportedCounterValues, counterValuesInBatch, 6000, 11000);
+
+        assertEquals(idleFlush.size(), 0);
+        lastReportedCounterValues.putAll(counterValuesInBatch);
+
+        counterValuesInBatch.clear();
+        MetricBuffer thirdFlush = generateMetricBuffer(lastReportedCounterValues, counterValuesInBatch, 11000, 16000);
+
+        assertEquals(thirdFlush.size(), 1);
+        Count thirdCount = (Count) thirdFlush.createBatch().getTelemetry().iterator().next();
+        assertEquals(thirdCount.getValue(), 10.0);
+        assertEquals(thirdCount.getStartTimeMs(), 11000L);
+        assertEquals(thirdCount.getEndTimeMs(), 16000L);
+    }
+
+    @Test
     public void testGenerateMetricBufferWithNoMetrics() throws ReflectiveOperationException {
         when(registry.getAllMetrics()).thenReturn(new io.ballerina.runtime.observability.metrics.Metric[0]);
 
@@ -206,6 +242,17 @@ public class NewRelicMetricsReporterTest {
         Method method = NewRelicMetricsReporter.class.getDeclaredMethod("generateMetricBuffer", Attributes.class);
         method.setAccessible(true);
         return (MetricBuffer) method.invoke(null, new Attributes());
+    }
+
+    private MetricBuffer generateMetricBuffer(Map<MetricId, Long> lastReportedCounterValues,
+                                              Map<MetricId, Long> counterValuesInBatch,
+                                              long intervalStartTime, long intervalEndTime)
+            throws ReflectiveOperationException {
+        Method method = NewRelicMetricsReporter.class.getDeclaredMethod("generateMetricBuffer", Attributes.class,
+                Map.class, Map.class, long.class, long.class);
+        method.setAccessible(true);
+        return (MetricBuffer) method.invoke(null, new Attributes(), lastReportedCounterValues, counterValuesInBatch,
+                intervalStartTime, intervalEndTime);
     }
 
     private double getMetricValue(Object value) throws ReflectiveOperationException {
