@@ -225,17 +225,20 @@ public class NewRelicMetricsReporter {
             String metricType = null;
             Snapshot[] snapshots = null;
 
+            long counterDelta = 0;
             if (metric instanceof Counter counter) {
                 long currentValue = counter.getValue();
                 long previousValue = lastReportedCounterValues.getOrDefault(metricId, 0L);
-                // Counters are cumulative. Export the change since the last successful flush.
+                // Counters are cumulative. Keep the existing value metric cumulative for backward compatibility,
+                // and export the change since the last successful flush as a separate delta metric.
                 // If the counter was reset, start a new baseline immediately so a failed send followed by a
                 // counter value that exceeds the old value does not lose increments from after the reset.
                 if (currentValue < previousValue) {
                     previousValue = 0;
                     lastReportedCounterValues.put(metricId, 0L);
                 }
-                metricValue = getMetricValue(currentValue - previousValue);
+                metricValue = getMetricValue(currentValue);
+                counterDelta = currentValue - previousValue;
                 counterValuesInBatch.put(metricId, currentValue);
                 metricType = MetricConstants.COUNTER;
             } else if (metric instanceof Gauge gauge) {
@@ -257,6 +260,11 @@ public class NewRelicMetricsReporter {
                         Count countMetric = generateCountMetric(metricReportName, metricValue, intervalStartTime,
                                 intervalEndTime, tags);
                         metricBuffer.addMetric(countMetric);
+                    }
+                    if (counterDelta > 0) {
+                        Count deltaMetric = generateCountMetric(getMetricName(qualifiedMetricName, "delta"),
+                                getMetricValue(counterDelta), intervalStartTime, intervalEndTime, tags);
+                        metricBuffer.addMetric(deltaMetric);
                     }
                 } else if (metricType.equals(MetricConstants.GAUGE)) {
                     com.newrelic.telemetry.metrics.Gauge gaugeMetric = generateGaugeMetric(metricReportName,

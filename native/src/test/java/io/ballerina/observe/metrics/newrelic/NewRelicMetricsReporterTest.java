@@ -144,14 +144,19 @@ public class NewRelicMetricsReporterTest {
 
         MetricBuffer buffer = generateMetricBuffer();
 
-        // counter(1) + gauge value(1) + min/max/mean/stdDev(4) + percentile(1) + polled gauge(1)
-        assertEquals(buffer.size(), 8);
+        // counter value/delta(2) + gauge value(1) + min/max/mean/stdDev(4) + percentile(1) + polled gauge(1)
+        assertEquals(buffer.size(), 9);
         Collection<Metric> metrics = buffer.createBatch().getTelemetry();
 
         Metric counterMetric = find(metrics, "requests_total_value");
         assertTrue(counterMetric instanceof Count);
         assertEquals(((Count) counterMetric).getValue(), 5.0);
         assertEquals(attributesOf(counterMetric).get("service"), "test");
+
+        Metric counterDeltaMetric = find(metrics, "requests_total_delta");
+        assertTrue(counterDeltaMetric instanceof Count);
+        assertEquals(((Count) counterDeltaMetric).getValue(), 5.0);
+        assertEquals(attributesOf(counterDeltaMetric).get("service"), "test");
 
         assertGauge(metrics, "response_time_value", 2.5);
         assertGauge(metrics, "response_time_min", 1.0);
@@ -178,27 +183,38 @@ public class NewRelicMetricsReporterTest {
         Map<MetricId, Long> counterValuesInBatch = new HashMap<>();
         MetricBuffer firstFlush = generateMetricBuffer(lastReportedCounterValues, counterValuesInBatch, 1000, 6000);
 
-        assertEquals(firstFlush.size(), 1);
-        Count firstCount = (Count) firstFlush.createBatch().getTelemetry().iterator().next();
-        assertEquals(firstCount.getValue(), 10.0);
-        assertEquals(firstCount.getStartTimeMs(), 1000L);
-        assertEquals(firstCount.getEndTimeMs(), 6000L);
+        assertEquals(firstFlush.size(), 2);
+        Collection<Metric> firstMetrics = firstFlush.createBatch().getTelemetry();
+        Count firstValue = (Count) find(firstMetrics, "requests_total_value");
+        assertEquals(firstValue.getValue(), 10.0);
+        assertEquals(firstValue.getStartTimeMs(), 1000L);
+        assertEquals(firstValue.getEndTimeMs(), 6000L);
+        Count firstDelta = (Count) find(firstMetrics, "requests_total_delta");
+        assertEquals(firstDelta.getValue(), 10.0);
+        assertEquals(firstDelta.getStartTimeMs(), 1000L);
+        assertEquals(firstDelta.getEndTimeMs(), 6000L);
         lastReportedCounterValues.putAll(counterValuesInBatch);
 
         counterValuesInBatch.clear();
         MetricBuffer idleFlush = generateMetricBuffer(lastReportedCounterValues, counterValuesInBatch, 6000, 11000);
 
-        assertEquals(idleFlush.size(), 0);
+        assertEquals(idleFlush.size(), 1);
+        Count idleValue = (Count) idleFlush.createBatch().getTelemetry().iterator().next();
+        assertEquals(idleValue.getName(), "requests_total_value");
+        assertEquals(idleValue.getValue(), 10.0);
         lastReportedCounterValues.putAll(counterValuesInBatch);
 
         counterValuesInBatch.clear();
         MetricBuffer thirdFlush = generateMetricBuffer(lastReportedCounterValues, counterValuesInBatch, 11000, 16000);
 
-        assertEquals(thirdFlush.size(), 1);
-        Count thirdCount = (Count) thirdFlush.createBatch().getTelemetry().iterator().next();
-        assertEquals(thirdCount.getValue(), 10.0);
-        assertEquals(thirdCount.getStartTimeMs(), 11000L);
-        assertEquals(thirdCount.getEndTimeMs(), 16000L);
+        assertEquals(thirdFlush.size(), 2);
+        Collection<Metric> thirdMetrics = thirdFlush.createBatch().getTelemetry();
+        Count thirdValue = (Count) find(thirdMetrics, "requests_total_value");
+        assertEquals(thirdValue.getValue(), 20.0);
+        Count thirdDelta = (Count) find(thirdMetrics, "requests_total_delta");
+        assertEquals(thirdDelta.getValue(), 10.0);
+        assertEquals(thirdDelta.getStartTimeMs(), 11000L);
+        assertEquals(thirdDelta.getEndTimeMs(), 16000L);
     }
 
     @Test
