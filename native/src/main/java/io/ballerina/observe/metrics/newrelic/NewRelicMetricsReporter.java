@@ -53,7 +53,9 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -129,6 +131,8 @@ public class NewRelicMetricsReporter {
         MetricBatchSenderFactory factory = MetricBatchSenderFactory.fromHttpImplementation(OkHttpPoster::new);
 
         List<MetricBatchSender> senders = new ArrayList<>();
+        List<Map<MetricId, Long>> lastReportedCounterValues = new ArrayList<>();
+        List<Long> lastReportedTimestamps = new ArrayList<>();
         for (String apiKeyValue : apiKeyList) {
             SenderConfiguration config = factory
                     .configureWith(apiKeyValue)
@@ -139,6 +143,8 @@ public class NewRelicMetricsReporter {
 
             MetricBatchSender sender = MetricBatchSender.create(config);
             senders.add(sender);
+            lastReportedCounterValues.add(new HashMap<>());
+            lastReportedTimestamps.add(System.currentTimeMillis());
         }
 
         // Create common attributes for all metrics
@@ -158,17 +164,33 @@ public class NewRelicMetricsReporter {
         // Schedule a task to run every 1 second with an initial delay of 0 seconds
         Attributes finalCommonAttributes = commonAttributes;
         executor.scheduleAtFixedRate(() -> {
-            MetricBuffer metricBuffer = generateMetricBuffer(finalCommonAttributes);
-            int metricCount = metricBuffer.size();
-            if (isPayloadLoggingEnabled) {
-                logger.info("Metric buffer: " + metricBuffer);
-            }
-            MetricBatch batch = metricBuffer.createBatch();
-            for (MetricBatchSender sender : senders) {
+            for (int i = 0; i < senders.size(); i++) {
+                Map<MetricId, Long> lastReportedValues = lastReportedCounterValues.get(i);
+                long intervalStartTime = lastReportedTimestamps.get(i);
+                long intervalEndTime = Math.max(System.currentTimeMillis(), intervalStartTime + 1);
+                Map<MetricId, Long> counterValuesInBatch = new HashMap<>();
+                MetricBuffer metricBuffer = generateMetricBuffer(finalCommonAttributes, lastReportedValues,
+                        counterValuesInBatch, intervalStartTime, intervalEndTime);
+                int metricCount = metricBuffer.size();
+                if (metricCount == 0) {
+                    // New Relic count values must be positive. An empty interval contributes no count data.
+                    lastReportedValues.putAll(counterValuesInBatch);
+                    lastReportedTimestamps.set(i, intervalEndTime);
+                    continue;
+                }
+                if (isPayloadLoggingEnabled) {
+                    logger.info("Metric buffer: " + metricBuffer);
+                }
+                MetricBatch batch = metricBuffer.createBatch();
                 try {
+                    MetricBatchSender sender = senders.get(i);
                     Response response = sender.sendBatch(batch);
                     logger.info("New Relic metric reporter status: " + response.getStatusCode() + ", response: "
                             + response.getBody() + ", payload metrics count: " + metricCount);
+                    if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                        lastReportedValues.putAll(counterValuesInBatch);
+                        lastReportedTimestamps.set(i, intervalEndTime);
+                    }
                 } catch (ResponseException e) {
                     logger.severe("Error sending metrics to New Relic: " + e.getMessage());
                 }
@@ -182,6 +204,15 @@ public class NewRelicMetricsReporter {
     }
 
     private static MetricBuffer generateMetricBuffer(Attributes commonAttributes) {
+        long intervalEndTime = System.currentTimeMillis();
+        return generateMetricBuffer(commonAttributes, new HashMap<>(), new HashMap<>(), intervalEndTime - 1,
+                intervalEndTime);
+    }
+
+    private static MetricBuffer generateMetricBuffer(Attributes commonAttributes,
+                                                     Map<MetricId, Long> lastReportedCounterValues,
+                                                     Map<MetricId, Long> counterValuesInBatch,
+                                                     long intervalStartTime, long intervalEndTime) {
         MetricBuffer metricBuffer = new MetricBuffer(commonAttributes);
         Metric[] metrics = DefaultMetricRegistry.getInstance().getAllMetrics();
 
@@ -194,8 +225,19 @@ public class NewRelicMetricsReporter {
             String metricType = null;
             Snapshot[] snapshots = null;
 
+            long counterDelta = 0;
             if (metric instanceof Counter counter) {
-                metricValue = getMetricValue(counter.getValue());
+                long currentValue = counter.getValue();
+                long previousValue = lastReportedCounterValues.getOrDefault(metricId, 0L);
+                // Counters are cumulative. Keep the value metric cumulative and report the interval increase
+                // separately so existing dashboards retain their meaning.
+                if (currentValue < previousValue) {
+                    previousValue = 0;
+                    lastReportedCounterValues.put(metricId, 0L);
+                }
+                metricValue = getMetricValue(currentValue);
+                counterDelta = currentValue - previousValue;
+                counterValuesInBatch.put(metricId, currentValue);
                 metricType = MetricConstants.COUNTER;
             } else if (metric instanceof Gauge gauge) {
                 metricValue = getMetricValue(gauge.getValue());
@@ -206,15 +248,22 @@ public class NewRelicMetricsReporter {
                 metricType = MetricConstants.GAUGE;
             }
             if (metricValue != null) {
-                long startTimeInMillis = System.currentTimeMillis();
                 Attributes tags = new Attributes();
                 for (Tag tag : metricId.getTags()) {
                     tags.put(tag.getKey(), tag.getValue());
                 }
 
                 if (metricType.equals(MetricConstants.COUNTER)) {
-                    Count countMetric = generateCountMetric(metricReportName, metricValue, startTimeInMillis, tags);
-                    metricBuffer.addMetric(countMetric);
+                    if (metricValue > 0) {
+                        Count countMetric = generateCountMetric(metricReportName, metricValue, intervalStartTime,
+                                intervalEndTime, tags);
+                        metricBuffer.addMetric(countMetric);
+                    }
+                    if (counterDelta > 0) {
+                        Count deltaMetric = generateCountMetric(getMetricName(qualifiedMetricName, "delta"),
+                                getMetricValue(counterDelta), intervalStartTime, intervalEndTime, tags);
+                        metricBuffer.addMetric(deltaMetric);
+                    }
                 } else if (metricType.equals(MetricConstants.GAUGE)) {
                     com.newrelic.telemetry.metrics.Gauge gaugeMetric = generateGaugeMetric(metricReportName,
                             metricValue, tags);
@@ -260,12 +309,13 @@ public class NewRelicMetricsReporter {
                 tags);
     }
 
-    private static Count generateCountMetric(String metricName, double value, long startTime, Attributes tags) {
+    private static Count generateCountMetric(String metricName, double value, long startTime, long endTime,
+                                             Attributes tags) {
         return new Count(
                 metricName,
                 value,
                 startTime,
-                System.currentTimeMillis(),
+                endTime,
                 tags);
     }
 

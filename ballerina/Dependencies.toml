@@ -102,7 +102,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "newrelic"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "log"},

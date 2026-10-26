@@ -93,6 +93,10 @@ Instrumentation of metrics is done using the [com.newrelic.telemetry](https://gi
 
 The exporter provides the following metrics.
 
+Counter metrics retain their cumulative `<name>_value` metric for compatibility. The exporter also reports
+`<name>_delta`, the increase since the last successful flush. Use `<name>_value` with `latest()` for the running
+total, and `<name>_delta` with `sum()` or `rate(sum(...))` for request counts over time.
+
 |Metric Name|Description|
 |---|---|
 |response_time_seconds_value|Response time of a HTTP request in seconds|
@@ -102,12 +106,15 @@ The exporter provides the following metrics.
 |response_time_seconds_stdDev|Standard deviation of response time of a HTTP request|
 |response_time_seconds|Summary of HTTP request-response times across various time frames and quantiles|
 |response_time_nanoseconds_total_value|Response time of a HTTP request in nano seconds|
-|requests_total_value|Total number of requests|
-|response_errors_total_value|Total number of response errors|
+|requests_total_value|Cumulative number of requests|
+|requests_total_delta|Number of requests since the last successful flush|
+|response_errors_total_value|Cumulative number of response errors|
+|response_errors_total_delta|Number of response errors since the last successful flush|
 |inprogress_requests_value|Total number of inprogress requests|
 |kafka_publishers_value|Number of publishers in kafka|
 |kafka_consumers_value|Number of consumers in kafka|
-|kafka_errors_value|Number of errors happened while publishing in kafka|
+|kafka_errors_value|Cumulative number of errors happened while publishing in kafka|
+|kafka_errors_delta|Number of Kafka publishing errors since the last successful flush|
 
 ### Observe Traces in New Relic
 
