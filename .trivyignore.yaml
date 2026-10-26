@@ -1,0 +1,8 @@
+# Keep the 1.0.x-compatible OpenTelemetry release. Suppress only the known
+# finding for the two affected 1.32.0 artifacts; revisit when this branch can
+# take the OpenTelemetry upgrade.
+vulnerabilities:
+  - id: CVE-2026-45292
+    purls:
+      - pkg:maven/io.opentelemetry/opentelemetry-api@1.32.0
+      - pkg:maven/io.opentelemetry/opentelemetry-extension-trace-propagators@1.32.0
