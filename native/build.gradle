@@ -31,7 +31,7 @@ dependencies {
     implementation "io.opentelemetry:opentelemetry-sdk-trace:${openTelemetrySDKVersion}"
     implementation "io.opentelemetry:opentelemetry-sdk-common:${openTelemetrySDKVersion}"
     implementation "io.opentelemetry.semconv:opentelemetry-semconv:${openTelemetrySemconvVersion}"
-    implementation "io.opentelemetry:opentelemetry-exporter-otlp-trace:${openTelemetryExporterVersion}"
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp:${openTelemetryExporterVersion}"
     implementation "io.opentelemetry:opentelemetry-extension-trace-propagators:${openTelemetryVersion}"
     implementation("com.google.guava:guava:${guavaVersion}") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
