@@ -203,12 +203,6 @@ public class NewRelicMetricsReporter {
         return output;
     }
 
-    private static MetricBuffer generateMetricBuffer(Attributes commonAttributes) {
-        long intervalEndTime = System.currentTimeMillis();
-        return generateMetricBuffer(commonAttributes, new HashMap<>(), new HashMap<>(), intervalEndTime - 1,
-                intervalEndTime);
-    }
-
     private static MetricBuffer generateMetricBuffer(Attributes commonAttributes,
                                                      Map<MetricId, Long> lastReportedCounterValues,
                                                      Map<MetricId, Long> counterValuesInBatch,
